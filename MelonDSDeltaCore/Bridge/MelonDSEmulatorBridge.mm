@@ -25,7 +25,9 @@
 #include "melonDS/src/GPU.h"
 #include "melonDS/src/AREngine.h"
 
-#include "melonDS/src/Config.h"
+// zhuowei
+//#include "melonDS/src/Config.h"
+#include "melonDS/src/NDSCart.h"
 
 #include <memory>
 
@@ -158,6 +160,8 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
     }
     else
     {
+// zhuowei: replaced in new melonDS
+#if 0
         // DS paths
         strncpy(Config::BIOS7Path, self.bios7URL.lastPathComponent.UTF8String, self.bios7URL.lastPathComponent.length);
         strncpy(Config::BIOS9Path, self.bios9URL.lastPathComponent.UTF8String, self.bios9URL.lastPathComponent.length);
@@ -168,6 +172,7 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
         strncpy(Config::DSiBIOS9Path, self.dsiBIOS9URL.lastPathComponent.UTF8String, self.dsiBIOS9URL.lastPathComponent.length);
         strncpy(Config::DSiFirmwarePath, self.dsiFirmwareURL.lastPathComponent.UTF8String, self.dsiFirmwareURL.lastPathComponent.length);
         strncpy(Config::DSiNANDPath, self.dsiNANDURL.lastPathComponent.UTF8String, self.dsiNANDURL.lastPathComponent.length);
+#endif
         
         [self registerForNotifications];
         
@@ -179,8 +184,10 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
     
     NDS::SetConsoleType((int)self.systemType);
 
+#if 0
     Config::JIT_Enable = [self isJITEnabled];
     Config::JIT_FastMemory = NO;
+#endif
     
     NDS::Init();
     self.initialized = YES;
@@ -193,7 +200,11 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
     BOOL isDirectory = NO;
     if ([[NSFileManager defaultManager] fileExistsAtPath:gameURL.path isDirectory:&isDirectory] && !isDirectory)
     {
-        if (!NDS::LoadROM(gameURL.fileSystemRepresentation, "", YES))
+      NSError* error;
+      NSData* cartData = [NSData dataWithContentsOfURL:gameURL options:0 error:&error];
+      if (!cartData) {
+        NSLog(@"failed to load cart data!! %@", error);
+      } else if (!NDSCart::LoadROM((const u8*)cartData.bytes, cartData.length))
         {
             NSLog(@"Failed to load Nintendo DS ROM.");
         }
@@ -353,7 +364,7 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
 
 - (void)saveGameSaveToURL:(NSURL *)URL
 {
-    NDS::RelocateSave(URL.fileSystemRepresentation, true);
+    //NDS::RelocateSave(URL.fileSystemRepresentation, true);
 }
 
 - (void)loadGameSaveFromURL:(NSURL *)URL
@@ -363,7 +374,7 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
         return;
     }
     
-    NDS::RelocateSave(URL.fileSystemRepresentation, false);
+    //NDS::RelocateSave(URL.fileSystemRepresentation, false);
 }
 
 #pragma mark - Save States -
@@ -407,15 +418,17 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
     int codeLength = (sanitizedCode.length / 8);
     
     ARCode code;
-    memset(code.Name, 0, 128);
+    //memset(code.Name, 0, 128);
     memset(code.Code, 0, 128);
-    memcpy(code.Name, sanitizedCode.UTF8String, MIN(128, sanitizedCode.length));
+    //memcpy(code.Name, sanitizedCode.UTF8String, MIN(128, sanitizedCode.length));
+    code.Name = sanitizedCode.UTF8String;
     ParseTextCode((char *)sanitizedCode.UTF8String, (int)[sanitizedCode lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &code.Code[0], 128);
     code.Enabled = YES;
     code.CodeLen = codeLength;
 
     ARCodeCat category;
-    memcpy(category.Name, sanitizedCode.UTF8String, MIN(128, sanitizedCode.length));
+    //memcpy(category.Name, sanitizedCode.UTF8String, MIN(128, sanitizedCode.length));
+    category.Name = sanitizedCode.UTF8String;
     category.Codes.push_back(code);
 
     self.cheatCodes->Categories.push_back(category);
@@ -807,4 +820,37 @@ namespace Platform
             NSLog(@"Failed to start listening to microphone. %@", error);
         }
     }
+
+std::string GetConfigString(ConfigEntry entry) {
+  MelonDSEmulatorBridge* bridge = MelonDSEmulatorBridge.sharedBridge;
+  // zhuowei: melonDS updating
+  switch (entry) {
+    case BIOS7Path:
+      return bridge.bios7URL.lastPathComponent.UTF8String;
+    case BIOS9Path:
+      return bridge.bios9URL.lastPathComponent.UTF8String;
+    case FirmwarePath:
+      return bridge.firmwareURL.lastPathComponent.UTF8String;
+    // TODO(zhuowei): DSi and other paths
+    default:
+      fprintf(stderr, "GetConfigString not implemented yet!\n");
+      return "";
+  }
+}
+
+bool GetConfigBool(ConfigEntry entry) {
+  MelonDSEmulatorBridge* bridge = MelonDSEmulatorBridge.sharedBridge;
+  switch (entry) {
+#ifdef JIT_ENABLED
+    case JIT_Enable:
+      return bridge.jitEnabled;
+    case JIT_FastMemory:
+      return false;
+#endif
+    default:
+      fprintf(stderr, "GetConfigBool not implemented yet!\n");
+      return false;
+  }
+}
+
 }

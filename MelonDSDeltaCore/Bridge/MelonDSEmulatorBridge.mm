@@ -642,24 +642,24 @@ namespace Platform
         [[NSNotificationCenter defaultCenter] postNotificationName:DLTAEmulatorCore.emulationDidQuitNotification object:nil];
     }
     
-    FILE* OpenFile(const char* path, const char* mode, bool mustexist)
+    FILE* OpenFile(const std::string& path, const std::string& mode, bool mustexist)
     {
         FILE* ret;
         
         if (mustexist)
         {
-            ret = fopen(path, "rb");
-            if (ret) ret = freopen(path, mode, ret);
+            ret = fopen(path.c_str(), "rb");
+            if (ret) ret = freopen(path.c_str(), mode.c_str(), ret);
         }
         else
-            ret = fopen(path, mode);
+            ret = fopen(path.c_str(), mode.c_str());
         
         return ret;
     }
     
-    FILE* OpenLocalFile(const char* path, const char* mode)
+    FILE* OpenLocalFile(const std::string& path, const std::string& mode)
     {
-        NSURL *fileURL = [MelonDSEmulatorBridge.coreDirectoryURL URLByAppendingPathComponent:@(path)];
+        NSURL *fileURL = [MelonDSEmulatorBridge.coreDirectoryURL URLByAppendingPathComponent:@(path.c_str())];
         return OpenFile(fileURL.fileSystemRepresentation, mode);
     }
     
@@ -672,7 +672,7 @@ namespace Platform
         return OpenFile(fileURL.fileSystemRepresentation, "rb");
     }
     
-    Thread *Thread_Create(void (*func)())
+    Thread* Thread_Create(std::function<void()> func)
     {
         NSThread *thread = [[NSThread alloc] initWithBlock:^{
             func();
@@ -851,6 +851,99 @@ bool GetConfigBool(ConfigEntry entry) {
       fprintf(stderr, "GetConfigBool not implemented yet!\n");
       return false;
   }
+}
+
+bool GetConfigArray(ConfigEntry entry, void* data)
+{
+  return false;
+}
+
+int GetConfigInt(ConfigEntry entry) {
+  fprintf(stderr, "GetConfigInt not implemented yet!\n");
+  return 0;
+}
+
+int InstanceID() {
+  return 0;
+}
+
+std::string InstanceFileSuffix() {
+  return "";
+}
+
+void MP_Begin()
+{
+}
+
+void MP_End()
+{
+}
+
+int MP_SendAck(u8* data, int len, u64 timestamp)
+{
+  return -1;
+}
+
+int MP_SendCmd(u8* data, int len, u64 timestamp)
+{
+  return -1;
+}
+
+int MP_SendReply(u8* data, int len, u64 timestamp, u16 aid)
+{
+  return -1;
+}
+
+int MP_SendPacket(u8* data, int len, u64 timestamp)
+{
+  return -1;
+}
+
+int MP_RecvPacket(u8* data, u64* timestamp)
+{
+  return -1;
+}
+
+int MP_RecvHostPacket(u8* data, u64* timestamp)
+{
+  return -1;
+}
+
+u16 MP_RecvReplies(u8* data, u64 timestamp, u16 aidmask)
+{
+  return -1;
+}
+
+
+void Camera_Start(int num)
+{
+}
+
+void Camera_Stop(int num)
+{
+}
+
+void Camera_CaptureFrame(int num, u32* frame, int width, int height, bool yuv)
+{
+}
+
+void WriteNDSSave(const u8* savedata, u32 savelen, u32 writeoffset, u32 writelen)
+{
+}
+
+void WriteGBASave(const u8* savedata, u32 savelen, u32 writeoffset, u32 writelen)
+{
+}
+
+void Log(LogLevel level, const char* fmt, ...)
+{
+    if (fmt == nullptr)
+        return;
+
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
 }
 
 }

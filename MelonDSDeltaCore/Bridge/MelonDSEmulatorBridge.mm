@@ -196,6 +196,8 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
     settings.Soft_Threaded = YES;
 
     GPU::SetRenderSettings(0, settings);
+  
+    NDS::LoadBIOS();
     
     BOOL isDirectory = NO;
     if ([[NSFileManager defaultManager] fileExistsAtPath:gameURL.path isDirectory:&isDirectory] && !isDirectory)
@@ -204,17 +206,22 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
       NSData* cartData = [NSData dataWithContentsOfURL:gameURL options:0 error:&error];
       if (!cartData) {
         NSLog(@"failed to load cart data!! %@", error);
-      } else if (!NDSCart::LoadROM((const u8*)cartData.bytes, cartData.length))
+      } else {
+        if (!NDS::LoadCart((const u8*)cartData.bytes, cartData.length, nullptr, 0))
         {
-            NSLog(@"Failed to load Nintendo DS ROM.");
+          NSLog(@"Failed to load Nintendo DS ROM.");
+        } else {
+          NDS::SetupDirectBoot(gameURL.lastPathComponent.UTF8String);
         }
+      }
     }
     else
     {
-        NDS::LoadBIOS();
+        // NDS::LoadBIOS();
     }
     
     self.stopping = NO;
+    NDS::Start();
 }
 
 - (void)stop

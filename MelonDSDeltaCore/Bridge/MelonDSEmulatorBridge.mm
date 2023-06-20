@@ -36,9 +36,11 @@
 #import <pthread.h>
 
 void MelonRipperRipCallbackFunction(void* data, size_t length) {
-  MelonDSEmulatorBridge* bridge = MelonDSEmulatorBridge.sharedBridge;
-  if (bridge.melonRipperRipCallbackFunction) {
-    bridge.melonRipperRipCallbackFunction([NSData dataWithBytes:data length:length]);
+  @autoreleasepool {
+    MelonDSEmulatorBridge* bridge = MelonDSEmulatorBridge.sharedBridge;
+    if (bridge.melonRipperRipCallbackFunction) {
+      bridge.melonRipperRipCallbackFunction([NSData dataWithBytes:data length:length]);
+    }
   }
 }
 

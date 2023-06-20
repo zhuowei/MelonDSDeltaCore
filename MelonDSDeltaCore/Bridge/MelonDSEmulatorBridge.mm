@@ -28,11 +28,19 @@
 // zhuowei
 //#include "melonDS/src/Config.h"
 #include "melonDS/src/NDSCart.h"
+#include "melonDS/src/MelonRipper.h"
 
 #include <memory>
 
 #import <notify.h>
 #import <pthread.h>
+
+void MelonRipperRipCallbackFunction(void* data, size_t length) {
+  MelonDSEmulatorBridge* bridge = MelonDSEmulatorBridge.sharedBridge;
+  if (bridge.melonRipperRipCallbackFunction) {
+    bridge.melonRipperRipCallbackFunction([NSData dataWithBytes:data length:length]);
+  }
+}
 
 // Copied from melonDS source (no longer exists in HEAD)
 void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever this should be named?
@@ -144,6 +152,10 @@ void ParseTextCode(char* text, int tlen, u32* code, int clen) // or whatever thi
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioSessionInterruption:) name:AVAudioSessionInterruptionNotification object:nil];
     }
+    
+  MelonRipper::g_melonripper_rip_callback = MelonRipperRipCallbackFunction;
+  MelonRipper::g_melonripper_rip_to_memory = true;
+  MelonRipper::RequestRip(100000000);
     
     return self;
 }
